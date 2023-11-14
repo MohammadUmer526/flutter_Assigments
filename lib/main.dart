@@ -74,11 +74,10 @@ class MenuPage extends StatelessWidget {
               title: Text(menuItems[index].name),
               onTap: () {
                 ShoppingCart.addToCart(menuItems[index]);
-                // Navigate to the OrderPage after adding an item to the cart
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => OrderPage(),
+                    builder: (context) => ItemPage(item: menuItems[index]),
                   ),
                 );
               },
@@ -125,10 +124,17 @@ class ItemPage extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 ShoppingCart.addToCart(item);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Added to Cart: ${item.name}'),
-                    duration: Duration(seconds: 2),
+                // ScaffoldMessenger.of(context).showSnackBar(
+                //   SnackBar(
+                //     content: Text('Added to Cart: ${item.name}'),
+                //     duration: Duration(seconds: 2),
+                //   ),
+                // );
+                // Navigate to the OrderPage after adding an item to the cart
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => OrderPage(),
                   ),
                 );
               },
