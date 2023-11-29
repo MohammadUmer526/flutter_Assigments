@@ -1,113 +1,77 @@
+import 'dart:async' show Future;
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'api_service.dart';
+import 'dio_service.dart';
 
 void main() {
   runApp(MyApp());
 }
 
-class Task {
-  String description;
-  bool completed;
-
-  Task({required this.description, this.completed = false});
-}
-
-class TaskListNotifier extends ChangeNotifier {
-  List<Task> _tasks = [];
-
-  List<Task> get tasks => _tasks;
-
-  void addTask(String description) {
-    _tasks.add(Task(description: description));
-    notifyListeners();
-  }
-
-  void removeTask(Task task) {
-    _tasks.remove(task);
-    notifyListeners();
-  }
-
-  void toggleTaskCompletion(Task task) {
-    task.completed = !task.completed;
-    notifyListeners();
-  }
-}
-
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => TaskListNotifier(),
-      child: MaterialApp(
-        home: TaskListScreen(),
-      ),
+    return MaterialApp(
+      home: MyHomePage(),
     );
   }
 }
 
-class TaskListScreen extends StatelessWidget {
-  final TextEditingController _textEditingController = TextEditingController();
+class MyHomePage extends StatefulWidget {
+  @override
+  _MyHomePageState createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  final ApiService apiService = ApiService();
+  final DioService dioService = DioService();
+
+  List<Map<String, dynamic>> apiData = [];
+  Map<String, dynamic> dioData = {};
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Task Manager'),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _textEditingController,
-                    decoration: InputDecoration(
-                      hintText: 'Enter task',
-                    ),
-                  ),
-                ),
-                SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: () {
-                    final description = _textEditingController.text;
-                    if (description.isNotEmpty) {
-                      Provider.of<TaskListNotifier>(context, listen: false)
-                          .addTask(description);
-                      _textEditingController.clear();
-                    }
-                  },
-                  child: Text('Add'),
-                ),
+    // TODO: implement build
+
+    return DefaultTabController(
+        length: 2,
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text('Http Request Example'),
+            bottom: TabBar(
+              tabs: [
+                Tab(text: 'HTTP'),
+                Tab(text: 'Dio'),
               ],
             ),
           ),
+          body: TabBarView(
+            children: [
+              _buildHttpTab(),
+              _buildDioTab(),
+            ],
+          ),
+        ));
+  }
+
+  Widget _buildHttpTab() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          ElevatedButton(
+            onPressed: () {
+              _fetchHttpData();
+            },
+            child: Text('Fetch Data'),
+          ),
+          SizedBox(height: 20),
           Expanded(
-            child: Consumer<TaskListNotifier>(
-              builder: (context, taskList, child) {
-                return ListView.builder(
-                  itemCount: taskList.tasks.length,
-                  itemBuilder: (context, index) {
-                    final task = taskList.tasks[index];
-                    return ListTile(
-                      title: Text(task.description),
-                      leading: Checkbox(
-                        value: task.completed,
-                        onChanged: (_) {
-                          Provider.of<TaskListNotifier>(context, listen: false)
-                              .toggleTaskCompletion(task);
-                        },
-                      ),
-                      trailing: IconButton(
-                        icon: Icon(Icons.delete),
-                        onPressed: () {
-                          Provider.of<TaskListNotifier>(context, listen: false)
-                              .removeTask(task);
-                        },
-                      ),
-                    );
-                  },
+            child: ListView.builder(
+              itemCount: apiData.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  title: Text('Title: ${apiData[index]['title']}'),
+                  subtitle: Text('Completed: ${apiData[index]['completed']}'),
                 );
               },
             ),
@@ -115,5 +79,55 @@ class TaskListScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildDioTab() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          ElevatedButton(
+            onPressed: () {
+              _fetchDioData(context);
+            },
+            child: Text('Fetch Data'),
+          ),
+          SizedBox(height: 20),
+          Text('Dio Response:'),
+          SizedBox(height: 10),
+          Expanded(
+            child: Container(
+              padding: EdgeInsets.all(10),
+              color: Colors.grey[200],
+              child: SingleChildScrollView(
+                child: Text(dioData.toString()),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _fetchHttpData() async {
+    try {
+      List<Map<String, dynamic>> result = await apiService.fetchData();
+      setState(() {
+        apiData = result;
+      });
+    } catch (e) {
+      print('Error ${e}');
+    }
+  }
+
+  Future<void> _fetchDioData(BuildContext context) async {
+    try {
+      Map<String, dynamic> result = await dioService.fetchData(context);
+      setState(() {
+        dioData = result;
+      });
+    } catch (e) {
+      print('Dio Error: $e');
+    }
   }
 }
