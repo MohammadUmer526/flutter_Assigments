@@ -2,6 +2,9 @@ import 'dart:async' show Future;
 import 'package:flutter/material.dart';
 import 'api_service.dart';
 import 'dio_service.dart';
+import 'socket_service.dart';
+
+// ... (previous imports)
 
 void main() {
   runApp(MyApp());
@@ -22,86 +25,105 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final ApiService apiService = ApiService();
   final DioService dioService = DioService();
+  final SocketService socketService = SocketService(); // Add this line
 
-  List<Map<String, dynamic>> apiData = [];
-  Map<String, dynamic> dioData = {};
+  @override
+  void initState() {
+    super.initState();
+    socketService.initSocket(); // Initialize socket connection
+  }
 
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
-
-    return DefaultTabController(
-        length: 2,
-        child: Scaffold(
-          appBar: AppBar(
-            title: Text('Http Request Example'),
-            bottom: TabBar(
-              tabs: [
-                Tab(text: 'HTTP'),
-                Tab(text: 'Dio'),
-              ],
-            ),
-          ),
-          body: TabBarView(
-            children: [
-              _buildHttpTab(),
-              _buildDioTab(),
-            ],
-          ),
-        ));
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Chat Example'),
+      ),
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () {
+            _openChatScreen(context);
+          },
+          child: Text('Open Chat'),
+        ),
+      ),
+    );
   }
 
-  Widget _buildHttpTab() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+  void _openChatScreen(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatScreen(socketService),
+      ),
+    );
+  }
+}
+
+class ChatScreen extends StatefulWidget {
+  final SocketService socketService;
+
+  ChatScreen(this.socketService);
+
+  @override
+  _ChatScreenState createState() => _ChatScreenState();
+}
+
+class _ChatScreenState extends State<ChatScreen> {
+  TextEditingController _messageController = TextEditingController();
+  List<String> _messages = [];
+
+  @override
+  void initState() {
+    super.initState();
+    widget.socketService.listenForMessages(_onMessageReceived);
+  }
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    widget.socketService.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Chat Screen'),
+      ),
+      body: Column(
         children: [
-          ElevatedButton(
-            onPressed: () {
-              _fetchHttpData();
-            },
-            child: Text('Fetch Data'),
-          ),
-          SizedBox(height: 20),
           Expanded(
             child: ListView.builder(
-              itemCount: apiData.length,
+              itemCount: _messages.length,
               itemBuilder: (context, index) {
                 return ListTile(
-                  title: Text('Title: ${apiData[index]['title']}'),
-                  subtitle: Text('Completed: ${apiData[index]['completed']}'),
+                  title: Text(_messages[index]),
                 );
               },
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDioTab() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          ElevatedButton(
-            onPressed: () {
-              _fetchDioData(context);
-            },
-            child: Text('Fetch Data'),
-          ),
-          SizedBox(height: 20),
-          Text('Dio Response:'),
-          SizedBox(height: 10),
-          Expanded(
-            child: Container(
-              padding: EdgeInsets.all(10),
-              color: Colors.grey[200],
-              child: SingleChildScrollView(
-                child: Text(dioData.toString()),
-              ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _messageController,
+                    decoration: InputDecoration(
+                      hintText: 'Enter your message...',
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.send),
+                  onPressed: () {
+                    _sendMessage();
+                  },
+                ),
+              ],
             ),
           ),
         ],
@@ -109,25 +131,17 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Future<void> _fetchHttpData() async {
-    try {
-      List<Map<String, dynamic>> result = await apiService.fetchData();
-      setState(() {
-        apiData = result;
-      });
-    } catch (e) {
-      print('Error ${e}');
-    }
+  void _onMessageReceived(String message) {
+    setState(() {
+      _messages.add(message);
+    });
   }
 
-  Future<void> _fetchDioData(BuildContext context) async {
-    try {
-      Map<String, dynamic> result = await dioService.fetchData(context);
-      setState(() {
-        dioData = result;
-      });
-    } catch (e) {
-      print('Dio Error: $e');
+  void _sendMessage() {
+    String message = _messageController.text.trim();
+    if (message.isNotEmpty) {
+      widget.socketService.sendMessage(message);
+      _messageController.clear();
     }
   }
 }
