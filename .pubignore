@@ -1,0 +1,8 @@
+lib/api_service.dart
+lib/dio_service.dart
+lib/main.dart
+test/widget_test.dart
+
+build/
+ios/build/
+/Users/muhammad.umerkhan/Desktop/Muhammad Umer/Flutter Learning/Projects/Assignemnts/flutter_assigment_code/build/macos/Build/Products/Debug/App.framework/Resources/
