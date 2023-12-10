@@ -1,9 +1,17 @@
-import 'dart:async' show Future;
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'api_service.dart';
-import 'dio_service.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  var user = FirebaseAuth.instance.currentUser;
+  print("Current User: $user");
+
   runApp(MyApp());
 }
 
@@ -11,6 +19,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'Firebase Flutter Demo',
       home: MyHomePage(),
     );
   }
@@ -22,112 +31,53 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final ApiService apiService = ApiService();
-  final DioService dioService = DioService();
-
-  List<Map<String, dynamic>> apiData = [];
-  Map<String, dynamic> dioData = {};
-
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
-
-    return DefaultTabController(
-        length: 2,
-        child: Scaffold(
-          appBar: AppBar(
-            title: Text('Http Request Example'),
-            bottom: TabBar(
-              tabs: [
-                Tab(text: 'HTTP'),
-                Tab(text: 'Dio'),
-              ],
-            ),
-          ),
-          body: TabBarView(
-            children: [
-              _buildHttpTab(),
-              _buildDioTab(),
-            ],
-          ),
-        ));
-  }
-
-  Widget _buildHttpTab() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          ElevatedButton(
-            onPressed: () {
-              _fetchHttpData();
-            },
-            child: Text('Fetch Data'),
-          ),
-          SizedBox(height: 20),
-          Expanded(
-            child: ListView.builder(
-              itemCount: apiData.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text('Title: ${apiData[index]['title']}'),
-                  subtitle: Text('Completed: ${apiData[index]['completed']}'),
-                );
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Firebase Flutter Demo'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            ElevatedButton(
+              onPressed: () async {
+                // Write data to Firestore
+                await addData();
               },
+              child: Text('Write Data to Firestore'),
             ),
-          ),
-        ],
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () async {
+                // Read data from Firestore
+                await fetchData();
+              },
+              child: Text('Read Data from Firestore'),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildDioTab() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          ElevatedButton(
-            onPressed: () {
-              _fetchDioData(context);
-            },
-            child: Text('Fetch Data'),
-          ),
-          SizedBox(height: 20),
-          Text('Dio Response:'),
-          SizedBox(height: 10),
-          Expanded(
-            child: Container(
-              padding: EdgeInsets.all(10),
-              color: Colors.grey[200],
-              child: SingleChildScrollView(
-                child: Text(dioData.toString()),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+  Future<void> addData() async {
+    // Replace 'data' with the actual name of your collection
+    await FirebaseFirestore.instance.collection('data').add({
+      'field1': 'value1',
+      'field2': 'value2',
+    });
+    print('Data added to Firestore');
   }
 
-  Future<void> _fetchHttpData() async {
-    try {
-      List<Map<String, dynamic>> result = await apiService.fetchData();
-      setState(() {
-        apiData = result;
-      });
-    } catch (e) {
-      print('Error ${e}');
-    }
-  }
+  Future<void> fetchData() async {
+    // Replace 'data' with the actual name of your collection
+    QuerySnapshot querySnapshot =
+        await FirebaseFirestore.instance.collection('data').get();
 
-  Future<void> _fetchDioData(BuildContext context) async {
-    try {
-      Map<String, dynamic> result = await dioService.fetchData(context);
-      setState(() {
-        dioData = result;
-      });
-    } catch (e) {
-      print('Dio Error: $e');
-    }
+    querySnapshot.docs.forEach((doc) {
+      print(doc.data());
+    });
   }
 }

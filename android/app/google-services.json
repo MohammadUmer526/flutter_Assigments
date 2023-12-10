@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "316599198493",
+    "project_id": "flutter-integration-f68ce",
+    "storage_bucket": "flutter-integration-f68ce.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:316599198493:android:0161da8b3e28a1fb59b7f4",
+        "android_client_info": {
+          "package_name": "com.example.restaurent_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBwmFTPysqEiZq5ee-pEn69NPYjIyIi3Lc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
